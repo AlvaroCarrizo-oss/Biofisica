@@ -7,8 +7,8 @@ library(tidyverse)
 library(ggplot2)
 library(readxl)
 #cargar datos
-balances <- read.table("Tarea 1/data_balance.txt", header = TRUE)
-texturas <- read.csv("Tarea 1/data_textura.csv", header = TRUE)
+balances <- read.table("data_balance.txt", header = TRUE)
+texturas <- read.csv("data_textura.csv", header = TRUE)
 head(balances)
 head(texturas)
 
