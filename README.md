@@ -2,9 +2,9 @@
 
 Trabajo grupal para asignatura de ICH3600 Biofísica Ambiental, Pontificia Universidad Católica de Chile
 
-## Contenido del reposirtorio
+## Contenido del repositorio
 
-- `Tarea1.R`: script principal del trabajo.
+- `Tarea1.R`: script principal de la Tarea1.
 - `data_balance.txt`: base de datos de balances.
 - `data_textura.csv`: base de datos de texturas.
 - `graficos/`: carpeta donde se guardan los gráficos generados.
