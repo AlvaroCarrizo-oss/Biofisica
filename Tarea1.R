@@ -1,11 +1,9 @@
 #instalación de paquetes
 #install.packages("tidyverse")
-#install.packages("ggplot2")
 #install.packages("readxl")
 #install.packages("here") #esta librería permite buscar los archivos en la carpeta asociada al script sin necesariamente fijar un directorio
 #cargar librerías
 library(tidyverse)  
-library(ggplot2)
 library(readxl)
 library(here)
 #cargar datos
