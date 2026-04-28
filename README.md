@@ -4,16 +4,17 @@ Trabajo grupal para asignatura de ICH3600 Biofísica Ambiental, Pontificia Unive
 
 ## Contenido del repositorio
 
-- `Tarea1_v4.R`: script principal de la Tarea1.
-- `data_balance.txt`: base de datos de balances.
-- `data_textura.csv`: base de datos de texturas.
+- `Avance 1`: primer script creado por Simón.
+- `avance_1_acr`: script modificado por ACR, falta solo calcular almacenamiento.
+- `figuras/`: carpeta donde se guardan los gráficos generados
 - `graficos/`: carpeta donde se guardan los gráficos generados.
-- `ProyectoBiofisica.Rproj`: archivo de proyecto de RStudio.
+- `Avance 1.Rproj`: archivo de proyecto de RStudio.
 
-## Paquetes necesarios
+## Cosas importantes
 
 Antes de ejecutar el script:
-- El paquete here permite utilizar las rutas relativas de los archivos. **Importante que los archivos a leer se encuentren siempre en la misma carpeta que el Script**.
+- El paquete **here** permite utilizar las rutas relativas de los archivos. **Importante que los archivos a leer se encuentren siempre en la misma carpeta que el Script**.
+- Para que les corra todo el Rscript, deben colocar en la misma carpeta del .Rproject y script, los archivos de SoilMaps, Rosseta_mean, LandCover y DEM
 - instalar los siguientes paquetes en R si no están disponibles:
 ```r
 install.packages(c("tidyverse", "here"))
