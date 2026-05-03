@@ -5,7 +5,7 @@ Trabajo grupal para asignatura de ICH3600 Biofísica Ambiental, Pontificia Unive
 ## Contenido del repositorio
 
 - `Avance 1`: primer script creado por Simón.
-- `avance_1_acr`: script modificado por ACR, falta solo calcular almacenamiento.
+- `avance_1_mod`: script modificado por ACR, falta solo calcular almacenamiento.
 - `figuras/`: carpeta donde se guardan los gráficos generados
 - `graficos/`: carpeta donde se guardan los gráficos generados.
 - `Avance 1.Rproj`: archivo de proyecto de RStudio.
