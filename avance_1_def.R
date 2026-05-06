@@ -209,39 +209,6 @@ colores <- c(
   "16" = "#3182BD"   # Plantación cosechada (azul)
 ) #jugar con los colores para mejor representación
 
-tmap_mode("plot")
-
-colores_presentes <- colores[as.character(clases_presentes$value)]
-polygon_tm <- st_transform(polygon, st_crs(lc.cat))
-
-mapa_lc <- tm_shape(lc.cat) +
-  tm_raster(
-    style = "cat",
-    palette = unname(colores_presentes),
-    labels = clases_presentes$cobertura,
-    title = "Cobertura"
-  ) +
-  tm_shape(polygon_tm) +
-  tm_borders(col = "black", lwd = 2) +
-  tm_layout(
-    main.title = "LandCover Polígono",
-    main.title.size = 1.1,
-    legend.outside = TRUE,
-    frame = TRUE
-  ) +
-  tm_compass(type = "8star", position = c("right", "top")) +
-  tm_scalebar(position = c("left", "bottom"),
-              breaks = c(0,1, 2)) +
-  tm_grid(lines = FALSE, labels.size = 0.7)
-
-tmap_save(
-  mapa_lc,
-  filename = file.path(fig_dir, "landcover_poligono.svg"),
-  width = 8,
-  height = 6,
-  units = "in"
-)
-
 #svg(file.path(fig_dir, "landcover_poligono.svg"), width = 8, height = 6)
 
 
