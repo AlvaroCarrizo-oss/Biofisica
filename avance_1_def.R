@@ -408,7 +408,7 @@ for (hz in horizontes) {
     col = paleta_silt,
     range = c(min_silt_global, max_silt_global)
   )
-  plot(vect(st_transform(polygon, crs(Clay_cut[[hz]]))), add = TRUE, border = "black", lwd = 1.2)
+  plot(vect(st_transform(polygon, crs(silts_cut[[hz]]))), add = TRUE, border = "black", lwd = 1.2)
 }
 
 dev.off()
