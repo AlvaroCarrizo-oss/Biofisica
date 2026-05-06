@@ -1,43 +1,53 @@
 #Primera modificación: Simón Martínez (generación polígono, LandCover, DEM, PieChart con la distribución de cobertura)
 #Segunda Modificación: Alvaro Carrizo (modificación código simón, generación de función para el polígono para cortar fácilmente y guardar .svg rápido igual, calculo de texturas, cc y pmp por horizontes)
 #Tercera Modificación: Joaquín Alvear (agregar sección de almacenamiento para cada horizonte y conversión a camiones aljibe de 10m3)
+#Cuarta Modificación: Yaku Valdivia (seccionar el código, generar zona de resultados)
 
+
+#### CONFIGURACIÓN Y CARGA DE LIBRERÍAS ####
 #paquetes
-install.packages("leaflet")
-install.packages("raster")
-install.packages("RColorBrewer")
-install.packages("sfheaders")
-install.packages("terra")
-install.packages("ggplot2")
-install.packages("here")
-install.packages("paletteer")
-install.packages("tmap")
-
+#install.packages("leaflet")
+#install.packages("raster")
+#install.packages("RColorBrewer")
+#install.packages("sfheaders")
+#install.packages("terra")
+#install.packages("ggplot2")
+#install.packages("here")
+#install.packages("paletteer")
+#install.packages("tmap")
+#install.packages("beepr")
+#install.packages("soiltexture")
+#install.packages("knitr")
 #librerias
+library(beepr)
 library(sf)
 library("leaflet")
 library("RColorBrewer")
 library("raster")
-library(tmap)
 library(sfheaders)
 library(terra)
 library(ggplot2)
 library(here)
 library(paletteer)
+library(soiltexture)
+library(knitr)
 
-#### Fijar directorio de trabajo
 
+#### Fijar directorio de trabajo 
 fig_dir <- here("figuras")
 soil_dir <- here("SoilMaps_MEAN")
 rosetta_dir <- here("ROSETTA_MEAN")
-#### Paquete sf y leaflet
+
+#### Paquete sf y leaflet 
 map <- leaflet()
 addTiles(map = map)
 map <- addProviderTiles(map = map, "Esri.WorldImagery", group = "ESRI")
 map
 
+#### CREACIÓN DEL PUNTO Y VISUALIZACIÓN EN LEAFLET ####
 #### Punto seleccionado (UTM)             #el código dice sur, pero en el sheet sale como norte 
-coordenada <- c(este = 121165.911441601 , sur = 5863133.22043047, label = "mi punto") ##esto es solo un vector con los datos de su punto, aún no es un objeto espacial
+coordenada <- c(este = 121165.911441601 , sur = 5863133.22043047, label = "mi punto") 
+##esto es solo un vector con los datos de su punto, aún no es un objeto espacial
 coordenada_m <- as.matrix(t(coordenada))
 coordenada_df <- as.data.frame.matrix(coordenada_m)
 coordenada_df[,1:2] <- apply(coordenada_df[1:2], 2, as.numeric)
@@ -53,6 +63,8 @@ punto_latlng <- st_transform(punto, crs = crs_latlong)
 map <- addMarkers(map = map, lat = st_coordinates(punto_latlng)[2], lng = st_coordinates(punto_latlng)[1], popup = c(punto_latlng$label))
 map
 
+
+#### GENERAR EL POLIGONO DE ESTUDIO #####
 #### Crear un poligono cuadrado, a partir de un punto (centroide)
 # Área deseada: 30 km2
 area_m2 <- 30 * 1000000 #30km2 a Xm2
@@ -88,6 +100,7 @@ crs_latlong <- crs("+proj=longlat +ellps=GRS80 +datum=WGS84 +units=m +no_defs") 
 punto_latlng <- st_transform(punto, crs = crs_latlong)
 cuadrado_latlng <- st_transform(cuadrado, crs = crs_latlong)
 
+#### GENERACIÓN DEL MAPA DE LOCACLIZACIÓN ####
 # visualizar polígono en el Mapa
 map <- leaflet()
 map <- addTiles(map)
@@ -117,6 +130,9 @@ map <- addPolygons(map, data = polygon_latlng, color = "red", weight = 2, #polig
                    fillColor = "red", fillOpacity = 0.2, popup = ~label)
 map
 
+
+#### FUNCIONES DE MANEJO DE RASTER ####
+
 #se genera código con función para recortar cualquier raster (r, tal como DEM_Chile Continental, LandCover, SoilMap, etc) con el polígono generado anteriormente (polygon)
 #se define con funtion(variables independientes, en este caso ráster y polígono), luego de { se comienza a definir los pasos de esta función
 poligono_recorte <- function(r,polygon){
@@ -134,7 +150,7 @@ poligono_recorte <- function(r,polygon){
 guardar_svg_raster <- function(r, polygon, titulo, archivo_salida, metodo = "bilinear",paleta = viridisLite::viridis(100)){
   r_cut <- poligono_recorte(r, polygon) #llama a la función anterior, es decir, para recortar el raster al polígono
   r_plot <- project(r_cut, st_crs(polygon)$wkt, method = metodo) # transforma el raster cortado por el polígono a coordenadas consistentes entre DEM y polígono
-   
+  
   svg(file.path(fig_dir, archivo_salida), width = 8, height = 6) #esto indica que se va a hacer un archivo .svg, define donde se va a guardar, con qué nombre y las dimensiones
   plot(r_plot, main = titulo, col = paleta) #indica que se va a graficar
   plot(vect(st_transform(polygon, crs(r_plot))), add = TRUE, border = "black", lwd = 1.5) #nuevamente, transforma los resultados a coordenadas coherentes entre sí
@@ -142,19 +158,23 @@ guardar_svg_raster <- function(r, polygon, titulo, archivo_salida, metodo = "bil
   
   return(r_plot)
 }
+#### COBERTURA DE SUELO DEL POLÍGONO ####
 #### Recortar Land cover según el polígono
 lc<- rast(here::here("CLDynamicLandCover_2018_1.0.tif")) #elemento raster
 lc
+#### Recortar Land cover según el polígono
+lc<- rast(here::here("CLDynamicLandCover_2018_1.0.tif")) #elemento raster
+lc
+plot(lc)
 
 lc_cut <- poligono_recorte(lc, polygon)
 
+plot(lc_cut)
+
 # reproyección final para dejarlo consistente con el polígono
 lc.proj <- project(lc_cut, st_crs(polygon)$wkt, method = "near")
-
 lc.cat <- as.factor(lc.proj)
-  
 plot(lc.proj, main = "Land Cover área de estudio")
-
 # tabla completa de clases
 clases <- data.frame(
   value = 1:16,
@@ -209,13 +229,11 @@ colores <- c(
   "16" = "#3182BD"   # Plantación cosechada (azul)
 ) #jugar con los colores para mejor representación
 
-#svg(file.path(fig_dir, "landcover_poligono.svg"), width = 8, height = 6)
+svg(file.path(fig_dir, "landcover_poligono.svg"), width = 8, height = 6)
 
+plot(lc.cat, main = "LandCover Polígono", col = colores)
 
-
-#plot(lc.cat, main = "LandCover Polígono", col = colores)
-
-#dev.off()
+dev.off()
 
 #### Grafico de Torta
 # frecuencia de pixeles sobre el lc proyectado (raster categórico)
@@ -251,32 +269,39 @@ print(pie_chart)
 dev.off()
 
 
-
+#### MANEJO DEM ####
 ######recorte raster DEM
 # cargar raster DEM #descargar del drive del anuncio del avance 1
 DEM <- rast(here("DEM.Chile.Continental.tif"))
 paleta_dem <-rev(hcl.colors(100, "Inferno"))
-
 # recortar y enmascarar
+DEM_cut <- poligono_recorte(DEM, polygon)
 
-DEM.proj <- guardar_svg_raster(r = DEM, 
+
+# visualizar resultado
+
+DEM.proj <- guardar_svg_raster(r = DEM,
                                polygon = polygon,
                                titulo = "DEM proyectado",
                                archivo_salida = "DEM_proyectado.svg",
                                metodo = "bilinear",
                                paleta = paleta_dem)
+svg(file.path(fig_dir,"DEM_poligono.svg"), width = 8, height = 6)
 
+plot(DEM.proj, main = "DEM proyectado")
+
+dev.off()
 
 #minimo y máximo
 valores <- global(DEM.proj, fun = c("min", "max"), na.rm = TRUE)
 
 elev_min <- valores[1,1]
 elev_max <- valores[1,2]
+valores_elev <- values(DEM.proj, na.rm = TRUE)[,1]
+#cat("Elevación mínima:", elev_min, "m\n")
+#cat("Elevación máxima:", elev_max, "m\n")
 
-cat("Elevación mínima:", elev_min, "m\n")
-cat("Elevación máxima:", elev_max, "m\n")
-
-
+#### MAPA DE TEXTURAS ####
 ###Mapas usando CLSoilMaps
 #artículo https://doi.org/10.1038/s41597-023-02536-x
 #database https://zenodo.org/records/7464210?preview_file=FileDesc.txt
@@ -315,8 +340,7 @@ for (hz in horizontes) {
 clay_cluster_agrup <- rast(Clay_cut)
 min_global <- global(clay_cluster_agrup, "min", na.rm = TRUE)[1,1]
 max_global <- global(clay_cluster_agrup, "max", na.rm = TRUE)[1,1]
-min_global
-max_global
+
 
 svg(file.path(fig_dir, "porcentaje_arcilla_en_cada_nivel.svg"), width=12, height=8 )
 par(mfrow = c(2, 3), mar = c(3, 3, 3, 5))
@@ -355,8 +379,7 @@ for (hz in horizontes) {
 sand_cluster_agrup <- rast(sands_cut)
 min_sand_global <- global(sand_cluster_agrup, "min", na.rm = TRUE)[1,1]
 max_sand_global <- global(sand_cluster_agrup, "max", na.rm = TRUE)[1,1]
-min_sand_global
-max_sand_global
+
 
 svg(file.path(fig_dir, "porcentaje_arena_en_cada_nivel.svg"), width=12, height=8 )
 par(mfrow = c(2, 3), mar = c(3, 3, 3, 5))
@@ -395,8 +418,8 @@ for (hz in horizontes) {
 silt_cluster_agrup <- rast(silts_cut)
 min_silt_global <- global(silt_cluster_agrup, "min", na.rm = TRUE)[1,1]
 max_silt_global <- global(silt_cluster_agrup, "max", na.rm = TRUE)[1,1]
-min_silt_global
-max_silt_global
+
+
 
 svg(file.path(fig_dir, "porcentaje_limo_en_cada_nivel.svg"), width=12, height=8 )
 par(mfrow = c(2, 3), mar = c(3, 3, 3, 5))
@@ -408,11 +431,120 @@ for (hz in horizontes) {
     col = paleta_silt,
     range = c(min_silt_global, max_silt_global)
   )
-  plot(vect(st_transform(polygon, crs(silts_cut[[hz]]))), add = TRUE, border = "black", lwd = 1.2)
+  plot(vect(st_transform(polygon, crs(Clay_cut[[hz]]))), add = TRUE, border = "black", lwd = 1.2)
 }
 
 dev.off()
 
+# Clases texturales promedio ##
+# Dataframe vacío para guardar los resultados
+textura_promedio <- data.frame(
+  horizonte = horizontes,
+  arena = NA,
+  limo  = NA,
+  arcilla = NA
+)
+
+for (i in seq_along(horizontes)) {
+  hz <- horizontes[i]
+  textura_promedio$arena[i]   <- global(sands_cut[[hz]], "mean", na.rm = TRUE)[1,1]
+  textura_promedio$limo[i]    <- global(silts_cut[[hz]], "mean", na.rm = TRUE)[1,1]
+  textura_promedio$arcilla[i] <- global(Clay_cut[[hz]], "mean", na.rm = TRUE)[1,1]
+}
+
+# Redondear a un decimal
+#textura_promedio[,2:4] <- round(textura_promedio[,2:4], 2)
+
+textura_promedio$suma <- textura_promedio$arena + textura_promedio$limo + textura_promedio$arcilla
+textura_promedio$arena   <- textura_promedio$arena   / textura_promedio$suma * 100
+textura_promedio$limo    <- textura_promedio$limo    / textura_promedio$suma * 100
+textura_promedio$arcilla <- textura_promedio$arcilla / textura_promedio$suma * 100
+textura_promedio$suma <- NULL
+
+datos_promedio <- data.frame(
+  CLAY = textura_promedio$arcilla,
+  SILT = textura_promedio$limo,
+  SAND = textura_promedio$arena
+)
+
+rownames(datos_promedio) <- textura_promedio$horizonte  # nombres para etiquetas
+print(round(datos_promedio))
+# Para usar en TT.plot
+text1 <- datos_promedio[, c("CLAY", "SILT", "SAND")];text1
+
+# Colores de puntos por horizonte
+colores_base <- c("red3", "blue3", "darkgreen", "orange3", "purple3",
+                  "gray30","deeppink3", "goldenrod3", "cyan4" )
+
+colores1 <- colores_base[1:nrow(datos_promedio)]
+
+
+col_fondo <- c(
+  "honeydew", "palegreen1", "palegreen3", "darkseagreen1",
+  "darkseagreen4", "olivedrab1", "olivedrab3", "darkolivegreen1",
+  "darkolivegreen4", "springgreen2", "seagreen2",
+  "forestgreen"
+)
+
+
+par(mfrow = c(1, 1), pty = "s", mar = c(1, 1, 3, 1)) #modificacion de los márgenes de la imagen; mar=bottom, left, top, right
+
+
+# -------- Sitio 1 --------
+geo1 <- TT.plot(             #VISUALIZACION DEL TRIANGULO TEXTURAL CON LOS PUNTOS DEL SITIO 1
+  class.sys = "USDA.TT",     #clasificacion de las texturas a utilizar
+  class.p.bg.col = col_fondo,#colores del triangulo
+  tri.data = text1,          #datos de textura del sitio 1 (df sin calumna de horizotes)
+  pch = 19,                  #diseño del punto
+  col = colores1,            #colores de los puntos 
+  cex = 0.5,                 #tamaño de los puntos
+  lwd.axis = 0.8,            #tamaño de las lineas del triangulo
+  cex.lab = 0.9,             #tamaño de la letra de titulos de los ejes
+  cex.axis = 0.8,            #tamaño de los números de los ejes
+  lang = "en",               #idioma
+  main = "Clase textura promedio por horizonte"           #titulo del triángulo
+)
+
+legend(                      #LEYENDA CON EL DETALLE DE LOS HORIZONTES: PROFUNDIDAD Y COLOR DEL PUNTO
+  "topright",
+  legend = horizontes,
+  col = colores1,
+  pch = 19,
+  pt.cex = 1.1,
+  cex = 0.8,
+  bty = "n",
+  title = "Horizontes"
+)
+
+clases <- TT.points.in.classes(
+  tri.data = datos_promedio,
+  class.sys = "USDA.TT"
+)
+
+# Extraer el nombre de la clase 
+textura_promedio$clase_usda <- colnames(clases)[max.col(clases)]
+
+traduccion <- c(
+  Cl    = "Arcilloso",
+  SiCl  = "Arcillo limoso",
+  SaCl  = "Arcillo arenoso",
+  ClLo  = "Franco arcilloso",
+  SiClLo= "Franco arcillo limoso",
+  SaClLo= "Franco arcillo arenoso",
+  Lo    = "Franco",
+  SiLo  = "Franco limoso",
+  SaLo  = "Franco arenoso",
+  Si    = "Limoso",
+  LoSa  = "Areno franco",
+  Sa    = "Arenoso"
+)
+textura_promedio$clase <- traduccion[textura_promedio$clase_usda]
+
+
+
+
+
+#### PROPIEDADES HIDRÁULICAS ####
 direct_prop_hid <- here("ROSETTA_MEAN") 
 
 Capacidad_de_campo_cut <- list()
@@ -438,8 +570,7 @@ for (hz in horizontes){
 Capacidad_de_campo_cluster <- rast(Capacidad_de_campo_cut)
 min_cc_global <- global(Capacidad_de_campo_cluster, "min", na.rm = TRUE)[1,1]
 max_cc_global <- global(Capacidad_de_campo_cluster, "max", na.rm = TRUE)[1,1]
-min_cc_global
-max_cc_global
+
 
 svg(file.path(fig_dir, "cc_cada_nivel.svg"), width=12, height=8 )
 par(mfrow = c(2, 3), mar = c(3, 3, 3, 5))
@@ -479,8 +610,6 @@ for (hz in horizontes){
 Punto_marchitez_cluster <- rast(Punto_marchitez_cut)
 min_pmp_global <- global(Punto_marchitez_cluster, "min", na.rm = TRUE)[1,1]
 max_pmp_global <- global(Punto_marchitez_cluster, "max", na.rm = TRUE)[1,1]
-min_pmp_global
-max_pmp_global
 
 svg(file.path(fig_dir, "pmp_cada_nivel.svg"), width=12, height=8 )
 par(mfrow = c(2, 3), mar = c(3, 3, 3, 5))
@@ -496,13 +625,24 @@ for (hz in horizontes) {
 }
 
 dev.off()
+prop_promedio <- data.frame(
+  horizonte = horizontes,
+  pmp=NA,
+  cc=NA
+)
 
-#Almacenamiento
+for (i in seq_along(horizontes)) {
+  hz <- horizontes[i]
+  prop_promedio$pmp[i]   <- round(global(Punto_marchitez_cluster[[hz]], "mean", na.rm = TRUE)[1,1],3)
+  prop_promedio$cc[i]   <- round(global(Capacidad_de_campo_cluster[[hz]], "mean", na.rm = TRUE)[1,1],3)
+}
 
+
+
+#### CÁLCULO DEL ALMACENAMIENTO ####
 #(CC - PMP) * espesor 
 
 espesores <- c(5, 10, 15, 30, 40, 100)  # cm de cada horizonte en archivos .tif
-
 almacenamiento_cut <- list()
 paleta_alm <- rev(hcl.colors(100, "Blues"))
 
@@ -510,15 +650,10 @@ paleta_alm <- rev(hcl.colors(100, "Blues"))
 for (i in seq_along(horizontes)) {
   hz <- horizontes[i]
   esp <- espesores[i]
-  
   alm_hz <- (Capacidad_de_campo_cut[[hz]] - Punto_marchitez_cut[[hz]]) * esp
-  
   almacenamiento_cut[[hz]] <- alm_hz
-  
   nombre_svg <- paste0("almacenamiento_", gsub("-", "_", hz), "cm.svg")
-  
   alm_plot <- project(alm_hz, st_crs(polygon)$wkt, method = "bilinear")
-  
   svg(file.path(fig_dir, nombre_svg), width = 8, height = 6)
   plot(alm_plot,
        main = paste("Almacenamiento por horizonte -", hz, "cm"),
@@ -528,13 +663,11 @@ for (i in seq_along(horizontes)) {
 }
 
 #Almacenamiento/pixel
-
 #Apilar todos los horizontes y sumarlos
 alm_stack <- rast(almacenamiento_cut)
 alm_total <- app(alm_stack, fun = sum, na.rm = TRUE)
 #sistema común
 alm_total_proj <- project(alm_total, st_crs(polygon)$wkt, method = "bilinear")
-
 svg(file.path(fig_dir, "almacenamiento_total_por_pixel.svg"), width = 8, height = 6)
 plot(alm_total_proj,
      main = "Almacenamiento total del suelo por píxel (cm de agua)",
@@ -545,8 +678,7 @@ dev.off()
 #Valores mínimo y máximo del almacenamiento total
 min_alm <- global(alm_total_proj, "min", na.rm = TRUE)[1,1]
 max_alm <- global(alm_total_proj, "max", na.rm = TRUE)[1,1]
-cat("Almacenamiento mínimo:", round(min_alm, 2), "cm\n")
-cat("Almacenamiento máximo:", round(max_alm, 2), "cm\n")
+
 
 #### Panel de almacenamiento por horizonte con escala común
 mins <- sapply(horizontes, function(hz) global(almacenamiento_cut[[hz]], "min", na.rm = TRUE)[1,1])
@@ -555,12 +687,9 @@ maxs <- sapply(horizontes, function(hz) global(almacenamiento_cut[[hz]], "max", 
 min_alm_hz <- min(mins, na.rm = TRUE)
 max_alm_hz <- max(maxs, na.rm = TRUE)
 
-cat("Min global almacenamiento:", round(min_alm_hz, 3), "cm\n")
-cat("Max global almacenamiento:", round(max_alm_hz, 3), "cm\n")
 
 svg(file.path(fig_dir, "almacenamiento_por_horizonte.svg"), width = 12, height = 8)
 par(mfrow = c(2, 3), mar = c(3, 3, 3, 5))
-
 for (hz in horizontes) {
   alm_proj <- project(almacenamiento_cut[[hz]], st_crs(polygon)$wkt, method = "bilinear")
   plot(
@@ -573,6 +702,21 @@ for (hz in horizontes) {
 }
 
 dev.off()
+
+promedio_alm_hz <- data.frame(
+  horizonte = horizontes,
+  alm=NA
+)
+
+for (i in seq_along(horizontes)) {
+  hz <- horizontes[i]
+  promedio_alm_hz$alm[i]   <- round(global(almacenamiento_cut[[hz]], "mean", na.rm = TRUE)[1,1],2)
+ }
+
+# Mostrar los valores
+
+promedio_total <- global(alm_total, "mean", na.rm = TRUE)[1,1]
+
 
 #Volumen de agua en polígono
 
@@ -588,7 +732,52 @@ capacidad_aljibe_m3 <- 10  # m³
 # Número de camiones
 n_aljibes <- volumen_total_m3 / capacidad_aljibe_m3
 
+
+
+##### RESULTADOS NUMÉRICOS ####
+
+
+cat("\n============================================\n","MANEJO DEM\n",
+    "============================================\n")
+
+cat("Elevación máxima:", round(max(valores_elev),2), "m\n",
+    "Elevación mínima:", round(min(valores_elev),2), "m\n",
+    "Resumen cuantiles DEM","\n","Min. 1st Qu. Median Mean 3rd Qu.Max.","\n",round(summary(valores_elev),2),"\n",
+    "IQR DEM","\n",round(IQR(valores_elev),2),"\n",
+    "Desviación estándar DEM","\n",round(sd(valores_elev),2),"\n",
+    "Coeficiente de variación DEM", "\n",round(sd(valores_elev)/mean(valores_elev),2)) #Coeficiente de variación
+
+
+cat("\n============================================\n","MAPA DE TEXTURAS\n",
+    "============================================\n")
+cat("Mínimo porcentaje de arcilla:",round(min_global,2),"%","\n",
+    "Máximo porcentaje de arcilla:",round(max_global,2),"%","\n",
+    "Mínimo porcentaje de arena:",round(min_sand_global,2),"%","\n",
+    "Máximo porcentaje de arena:",round(max_sand_global,2),"%","\n",
+    "Mínimo porcentaje de limo:",round(min_silt_global,2),"%","\n",
+    "Máximo porcentaje de limo:",round(max_silt_global,2),"%")
+kable(textura_promedio[,c("horizonte","arena","limo","arcilla","clase")], caption = "Clasificación USDA por horizonte")
+
+cat("\n============================================\n",
+    "PROPIEDADES HIDRÁULICAS\n",
+    "============================================\n")
+cat("Mínimo valor de CC:",round(min_cc_global,2),"cm^3/cm^3","\n",
+    "Máximo valor de CC:",round(max_cc_global,2),"cm^3/cm^3","\n",
+    "Mínimo valor de PMP:",round(min_pmp_global,2),"cm^3/cm^3","\n",
+    "Máximo valor de PMP:",round(max_pmp_global,2),"cm^3/cm^3","\n")
+kable(prop_promedio,caption = "Propiedades Hidráulicas por horizonte")
+
+cat("\n============================================\n",
+    "ALMACENAMIENTOS\n",
+    "============================================\n")
+cat("Almacenamiento mínimo por pixel:", round(min_alm, 2), "cm\n",
+    "Almacenamiento máximo por pixel:", round(max_alm, 2), "cm\n",
+    "Mínimo global de almacenamiento por horizontes:", round(min_alm_hz, 3), "cm\n",
+    "Máximo global de almacenamiento por horizontes:", round(max_alm_hz, 3), "cm\n")
+
+kable(promedio_alm_hz, caption="Almacenamiento promedio por horizonte")
+cat("Almacenamiento total promedio por pixel:", round(promedio_total, 2), "cm\n")
 print(paste("Suma total de almacenamiento (cm):", round(suma_alm_cm, 2)))
 print(paste("Volumen total de agua en el polígono:", round(volumen_total_m3, 2), "m³"))
 print(paste("Equivalente en camiones aljibe (10 m³ c/u):", round(n_aljibes, 0), "camiones"))
-
+beep(8)
