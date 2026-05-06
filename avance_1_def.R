@@ -445,6 +445,9 @@ textura_promedio <- data.frame(
   arcilla = NA
 )
 
+dev.list()
+graphics.off()
+
 for (i in seq_along(horizontes)) {
   hz <- horizontes[i]
   textura_promedio$arena[i]   <- global(sands_cut[[hz]], "mean", na.rm = TRUE)[1,1]
