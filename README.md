@@ -4,7 +4,7 @@ Trabajo grupal para asignatura de ICH3600 Biofísica Ambiental, Pontificia Unive
 
 ## Contenido del repositorio
 
-- `avance_1_def`: script final.
+- `avance_1_v4`: script final.
 - `figuras/`: carpeta donde se guardan los gráficos generados
 - `Avance 1.Rproj`: archivo de proyecto de RStudio.
 
