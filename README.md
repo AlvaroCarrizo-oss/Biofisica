@@ -7,6 +7,9 @@ Trabajo grupal para asignatura de ICH3600 Biofísica Ambiental, Pontificia Unive
 - `avance_1_v4`: script final.
 - `figuras/`: carpeta donde se guardan los gráficos generados
 - `Avance 1.Rproj`: archivo de proyecto de RStudio.
+- `ROSETTA_MEAN/`: Carpeta que debe contener los Ráster con propiedades hidráulicas
+- `SoilMaps_MEAN/`: Carpeta que debe contener los Ráster con granulometrías
+- En la carpeta "maestra" debe estar el script, DEM_Chile_Continental, CLDynamicLandCover_2018_1.0 y carpetas "figuras", "ROSETTA_MEAN" y "SoilMaps_MEAN/"
 
 ## Cosas importantes
 
